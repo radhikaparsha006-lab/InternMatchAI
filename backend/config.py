@@ -19,6 +19,16 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: Optional[str] = os.getenv("SUPABASE_ANON_KEY", None)
     SUPABASE_SERVICE_ROLE_KEY: Optional[str] = os.getenv("SUPABASE_SERVICE_ROLE_KEY", None)
 
+    # Optional External AI/LLM API credentials
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY", None)
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", None)
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "grounded_rule_based")  # 'grounded_rule_based', 'openai', 'gemini'
+
+    # Optional External Internship API credentials (e.g. Adzuna, RapidAPI, SerpApi)
+    RAPIDAPI_KEY: Optional[str] = os.getenv("RAPIDAPI_KEY", None)
+    ADZUNA_APP_ID: Optional[str] = os.getenv("ADZUNA_APP_ID", None)
+    ADZUNA_APP_KEY: Optional[str] = os.getenv("ADZUNA_APP_KEY", None)
+
     # CORS settings
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

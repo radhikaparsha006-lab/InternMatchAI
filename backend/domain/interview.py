@@ -126,16 +126,16 @@ class MockInterviewEngine:
         matched_kw = [kw for kw in ideal_keywords if kw.lower() in answer_lower]
         kw_ratio = len(matched_kw) / max(1, len(ideal_keywords))
 
-        # Correctness: 50% keyword presence + 50% substantive explanation
-        correctness = min(100.0, (kw_ratio * 60.0) + (min(word_count, 120) / 120.0 * 40.0))
+        # Correctness: keyword presence + explanation completeness
+        correctness = min(100.0, (kw_ratio * 65.0) + (min(word_count, 100) / 100.0 * 35.0))
         
-        # Technical depth: assesses technical keywords & length
-        technical_depth = min(100.0, (len(matched_kw) * 12.0) + (min(word_count, 150) / 150.0 * 40.0))
+        # Technical depth: technical keyword depth + explanation depth
+        technical_depth = min(100.0, (len(matched_kw) * 16.0) + (min(word_count, 100) / 100.0 * 30.0))
 
-        # Clarity: penalized if too short (<25 words) or excessive run-on (>300 words without punctuation)
+        # Clarity: penalized only if extremely brief (<12 words)
         clarity = 85.0
-        if word_count < 25:
-            clarity -= 30.0
+        if word_count < 12:
+            clarity -= 25.0
         if "." in student_answer:
             clarity += 10.0
         clarity = min(100.0, max(30.0, clarity))

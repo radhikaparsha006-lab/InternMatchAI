@@ -13,11 +13,11 @@ class HybridRecommender:
     def __init__(
         self,
         w_req_skills: float = 0.35,
-        w_semantic: float = 0.25,
+        w_semantic: float = 0.20,
         w_projects: float = 0.15,
         w_pref_skills: float = 0.10,
         w_education: float = 0.10,
-        w_preferences: float = 0.05
+        w_preferences: float = 0.10
     ):
         self.w_req = w_req_skills
         self.w_sem = w_semantic
@@ -110,10 +110,17 @@ class HybridRecommender:
             edu_score = round(edu_score, 2)
 
             # E. Preferences Compatibility (0 - 100)
-            pref_match_score = 70.0
             role_cat = intern.get("role_category", "").lower()
-            if any(sr in role_cat or role_cat in sr for sr in student_roles):
-                pref_match_score += 20.0
+            if student_roles:
+                if any(sr in role_cat or role_cat in sr for sr in student_roles):
+                    pref_match_score = 90.0
+                elif any((("backend" in sr and "full stack" in role_cat) or ("full stack" in sr and "backend" in role_cat)) for sr in student_roles):
+                    pref_match_score = 75.0
+                else:
+                    pref_match_score = 30.0
+            else:
+                pref_match_score = 70.0
+
             if intern.get("is_remote") and student_remote_pref in ["remote_only", "flexible"]:
                 pref_match_score += 10.0
             elif not intern.get("is_remote") and student_remote_pref in ["onsite_only", "flexible"]:

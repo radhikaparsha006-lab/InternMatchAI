@@ -85,12 +85,16 @@ class ResumeParser:
 
         # 4. Extract Projects
         projects = []
-        proj_section_match = re.search(r"(?:projects|academic projects|personal projects)([\s\S]*?)(?:experience|education|skills|certifications|$)", text, re.IGNORECASE)
+        proj_section_match = re.search(
+            r"(?:project\s+experience|academic\s+projects|personal\s+projects|projects)[\s:]*\n([\s\S]*?)(?=(?:\n\s*(?:work\s+experience|experience|education|skills|certifications|awards)\b|$))",
+            text,
+            re.IGNORECASE
+        )
         if proj_section_match:
             proj_text = proj_section_match.group(1)
-            # Split by bullet points or blank lines
-            proj_blocks = [b.strip() for b in re.split(r"\n\s*\n|(?<=\n)(?=[•\-\*]\s+[A-Z])", proj_text) if b.strip()]
-            for i, block in enumerate(proj_blocks[:3]):
+            # Split by double newline or bullet points with optional indentation
+            proj_blocks = [b.strip() for b in re.split(r"\n\s*\n|\n\s*(?=[•\-\*]\s+[A-Z])", proj_text) if b.strip()]
+            for i, block in enumerate(proj_blocks[:4]):
                 first_line = block.split("\n")[0].strip("•-* ")
                 block_skills = SkillNormalizer.extract_from_text(block)
                 projects.append({
