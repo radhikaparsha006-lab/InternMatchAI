@@ -72,12 +72,19 @@ async def get_student_profile(student_id: str, db: AsyncSession = Depends(get_db
         ]
     )
 
-@router.put("/profile/{student_id}", response_model=Dict[str, str])
+@router.put("/profile/{student_id}", response_model=Dict[str, Any])
 async def update_profile(student_id: str, data: ProfileData, db: AsyncSession = Depends(get_db)):
     repo = DataRepository(db)
+    student = await repo.get_student(student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
     profile = await repo.get_student_profile(student_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
+
+    if data.full_name and data.full_name.strip():
+        student.full_name = data.full_name.strip()
 
     profile.headline = data.headline
     profile.education_degree = data.education_degree
@@ -91,7 +98,8 @@ async def update_profile(student_id: str, data: ProfileData, db: AsyncSession = 
     profile.preferred_industries = data.preferred_industries
 
     await db.commit()
-    return {"message": "Profile updated successfully"}
+    await db.refresh(student)
+    return {"message": "Profile updated successfully", "full_name": student.full_name}
 
 @router.post("/profile/{student_id}/skills", response_model=Dict[str, str])
 async def add_student_skill(student_id: str, req: AddSkillRequest, db: AsyncSession = Depends(get_db)):

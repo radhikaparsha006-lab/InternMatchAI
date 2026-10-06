@@ -10,6 +10,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
+import StudentSidebarBadge from "@/components/StudentSidebarBadge";
 
 export const metadata: Metadata = {
   title: "InternMatch AI – Personalized Internship Recommendation & Readiness",
@@ -78,21 +79,7 @@ export default function RootLayout({
           </nav>
 
           {/* Student Status Profile Badge */}
-          <div className="p-4 border-t border-slate-800 bg-slate-950/40">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow">
-                AC
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">Alex Chen</p>
-                <p className="text-xs text-slate-400 truncate">CS Junior • Class of &apos;26</p>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-1 rounded">
-              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-              <span>Ready for Backend Roles</span>
-            </div>
-          </div>
+          <StudentSidebarBadge />
         </aside>
 
         {/* Main Content Area */}

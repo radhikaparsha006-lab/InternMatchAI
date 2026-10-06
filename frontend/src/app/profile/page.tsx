@@ -19,6 +19,7 @@ import {
 
 export default function ProfilePage() {
   const [student, setStudent] = useState<StudentData | null>(null);
+  const [fullName, setFullName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>("");
@@ -49,6 +50,7 @@ export default function ProfilePage() {
       setLoading(true);
       const res = await api.getProfile(DEMO_STUDENT_ID);
       setStudent(res);
+      setFullName(res.full_name || "");
       if (res.profile) {
         setFormData({
           headline: res.profile.headline || "",
@@ -73,8 +75,33 @@ export default function ProfilePage() {
     e.preventDefault();
     try {
       setSaving(true);
-      await api.updateProfile(DEMO_STUDENT_ID, formData);
-      setSaveMessage("Profile changes saved successfully!");
+      const updatedPayload = {
+        ...formData,
+        full_name: fullName.trim(),
+      };
+      await api.updateProfile(DEMO_STUDENT_ID, updatedPayload);
+      if (student) {
+        setStudent({
+          ...student,
+          full_name: fullName.trim(),
+          profile: {
+            ...student.profile,
+            ...formData,
+          },
+        });
+      }
+      // Broadcast update across the whole application in real time
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("student-profile-updated", {
+            detail: {
+              full_name: fullName.trim(),
+              headline: formData.headline,
+            },
+          })
+        );
+      }
+      setSaveMessage("Profile & student name saved successfully!");
       setTimeout(() => setSaveMessage(""), 3500);
     } catch (err) {
       console.error(err);
@@ -120,8 +147,12 @@ export default function ProfilePage() {
   async function handleConfirmParsedResume() {
     if (!parsedPreview) return;
     try {
+      const extractedName = parsedPreview.full_name?.trim();
+      const updatedName = extractedName && extractedName !== "Applicant" ? extractedName : fullName;
+
       // 1. Update Profile Fields
       await api.updateProfile(DEMO_STUDENT_ID, {
+        full_name: updatedName,
         headline: parsedPreview.headline,
         education_degree: parsedPreview.education_degree,
         education_major: parsedPreview.education_major,
@@ -129,6 +160,20 @@ export default function ProfilePage() {
         gpa: parsedPreview.gpa,
         bio: parsedPreview.bio,
       });
+
+      if (updatedName) {
+        setFullName(updatedName);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("student-profile-updated", {
+              detail: {
+                full_name: updatedName,
+                headline: parsedPreview.headline,
+              },
+            })
+          );
+        }
+      }
 
       // 2. Add Extracted Skills
       for (const sk of parsedPreview.skills) {
@@ -143,6 +188,14 @@ export default function ProfilePage() {
     } catch (err) {
       console.error(err);
     }
+  }
+
+  function getInitials(name: string): string {
+    if (!name) return "ST";
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "ST";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   if (loading) {
@@ -167,6 +220,38 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* Student Identity Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm border border-slate-800">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white font-extrabold text-2xl flex items-center justify-center shadow-lg shadow-indigo-600/30 shrink-0">
+            {getInitials(fullName || student?.full_name || "Alex Chen")}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-white tracking-tight">
+                {fullName || student?.full_name || "Student"}
+              </h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-full">
+                Authenticated Student
+              </span>
+            </div>
+            <p className="text-sm text-indigo-200 mt-0.5">
+              {formData.headline || "Computer Science Student"}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {student?.email || "student@university.edu"} • ID: {DEMO_STUDENT_ID}
+            </p>
+          </div>
+        </div>
+        <div className="text-left sm:text-right">
+          <span className="text-xs text-slate-400 block">Verified Status</span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded-lg mt-1">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Ready for Technical Roles
+          </span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Profile Details Form */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
@@ -176,6 +261,24 @@ export default function ProfilePage() {
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Student Full Name <span className="text-indigo-600">*</span>
+              </label>
+              <input
+                type="text"
+                id="student-fullname-input"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Enter student full name (e.g. Rahul Kumar)"
+                required
+                className="w-full px-3.5 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/20 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                This name will be displayed across your dashboard greetings, sidebar identity badge, and application materials.
+              </p>
+            </div>
+
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                 Headline

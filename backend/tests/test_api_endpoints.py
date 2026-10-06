@@ -36,7 +36,7 @@ async def test_student_profile_lifecycle():
         assert res.status_code == 200
         data = res.json()
         assert data["id"] == "student_demo_01"
-        assert data["full_name"] == "Alex Chen"
+        assert bool(data["full_name"])
         assert len(data["skills"]) >= 4
 
         # Add a new skill
@@ -46,6 +46,39 @@ async def test_student_profile_lifecycle():
         )
         assert add_res.status_code == 200
         assert "Docker" in add_res.json()["message"]
+
+@pytest.mark.asyncio
+async def test_update_student_name_persistence():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # 1. Update name to "Rahul Kumar"
+        update_res = await client.put(
+            "/api/profile/student_demo_01",
+            json={
+                "full_name": "Rahul Kumar",
+                "headline": "Full-Stack Engineer & AI Enthusiast"
+            }
+        )
+        assert update_res.status_code == 200
+        assert update_res.json()["full_name"] == "Rahul Kumar"
+
+        # 2. Verify GET /profile returns "Rahul Kumar"
+        get_res = await client.get("/api/profile/student_demo_01")
+        assert get_res.status_code == 200
+        assert get_res.json()["full_name"] == "Rahul Kumar"
+
+        # 3. Verify Dashboard endpoint reflects "Rahul Kumar"
+        dash_res = await client.get("/api/dashboard/student_demo_01")
+        assert dash_res.status_code == 200
+        assert dash_res.json()["student"]["full_name"] == "Rahul Kumar"
+
+        # 4. Clean up / revert back
+        revert_res = await client.put(
+            "/api/profile/student_demo_01",
+            json={"full_name": "Alex Chen", "headline": "Aspiring Backend & Machine Learning Engineer"}
+        )
+        assert revert_res.status_code == 200
+        assert revert_res.json()["full_name"] == "Alex Chen"
 
 @pytest.mark.asyncio
 async def test_resume_parser_endpoint():

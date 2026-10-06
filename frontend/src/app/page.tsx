@@ -24,6 +24,28 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadDashboard();
+
+    function handleProfileUpdated(event: Event) {
+      const customEvent = event as CustomEvent<{ full_name?: string }>;
+      if (customEvent.detail?.full_name) {
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                student: {
+                  ...prev.student,
+                  full_name: customEvent.detail.full_name!,
+                },
+              }
+            : null
+        );
+      }
+    }
+
+    window.addEventListener("student-profile-updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("student-profile-updated", handleProfileUpdated);
+    };
   }, []);
 
   async function loadDashboard() {

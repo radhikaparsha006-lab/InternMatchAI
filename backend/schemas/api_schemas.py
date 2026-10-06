@@ -23,6 +23,7 @@ class ProjectItem(BaseModel):
     live_url: Optional[str] = ""
 
 class ProfileData(BaseModel):
+    full_name: Optional[str] = None
     headline: Optional[str] = ""
     education_degree: Optional[str] = ""
     education_major: Optional[str] = ""
